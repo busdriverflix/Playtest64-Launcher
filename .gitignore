@@ -1,0 +1,5 @@
+build/
+*.o
+*.part
+# a launcher folder somebody tested in
+.launcher-home/
