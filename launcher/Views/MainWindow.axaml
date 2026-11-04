@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Playtest64.Launcher.Views.MainWindow"
+        Title="Playtest64 Launcher"
+        Width="480" Height="430" CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://Playtest64Launcher/Assets/icon.png">
+
+    <Grid Margin="24" RowDefinitions="*,Auto">
+
+        <!-- Signing in -->
+        <StackPanel Name="SignInPanel" Grid.Row="0" Spacing="10" VerticalAlignment="Top">
+            <TextBlock Text="Playtest64" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock Text="Melde dich mit deinem Playtest-Konto an (dieselben Daten wie auf der Webseite)."
+                       TextWrapping="Wrap" Opacity="0.7"/>
+            <TextBlock Text="E-Mail" Margin="0,10,0,0"/>
+            <TextBox Name="EmailBox"/>
+            <TextBlock Text="Passwort"/>
+            <TextBox Name="PasswordBox" PasswordChar="•"/>
+            <Button Name="SignInButton" Content="Anmelden" Classes="accent" Margin="0,8,0,0" Click="SignInButton_OnClick"/>
+        </StackPanel>
+
+        <!-- The builds -->
+        <StackPanel Name="BuildsPanel" Grid.Row="0" Spacing="10" IsVisible="False">
+            <TextBlock Text="Playtest64" FontSize="22" FontWeight="SemiBold"/>
+            <Grid ColumnDefinitions="*,Auto">
+                <ComboBox Name="BuildBox" Grid.Column="0" HorizontalAlignment="Stretch" SelectionChanged="BuildBox_OnSelectionChanged"/>
+                <Button Name="ReloadButton" Grid.Column="1" Content="Neu laden" Margin="8,0,0,0" Click="ReloadButton_OnClick"/>
+            </Grid>
+            <Border BorderThickness="1" BorderBrush="#33FFFFFF" CornerRadius="4" Padding="10" Height="100">
+                <ScrollViewer>
+                    <TextBlock Name="NotesText" TextWrapping="Wrap" Opacity="0.85"/>
+                </ScrollViewer>
+            </Border>
+            <Button Name="ActionButton" Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Height="42" FontSize="15" Click="ActionButton_OnClick"/>
+            <ProgressBar Name="DownloadBar" Minimum="0" Maximum="1" Height="6"/>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+                <CheckBox Name="AutostartBox" Grid.Column="0" Content="Nach Updates suchen, wenn ich mich anmelde"
+                          IsCheckedChanged="AutostartBox_OnChanged"/>
+                <Button Name="SignOutButton" Grid.Column="1" Content="Abmelden" Click="SignOutButton_OnClick"/>
+            </Grid>
+        </StackPanel>
+
+        <TextBlock Name="StatusText" Grid.Row="1" TextWrapping="Wrap" Opacity="0.8" MinHeight="20"/>
+    </Grid>
+</Window>
