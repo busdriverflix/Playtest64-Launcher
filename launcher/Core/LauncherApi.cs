@@ -64,7 +64,7 @@ public sealed class LauncherApi(HttpClient http, Settings settings)
                     continue;
 
                 builds.Add(new BuildInfo(
-                    Number(entry, "id"), Number(file, "id"), Text(entry, "version", "?"), Text(entry, "notes"),
+                    (int)Number(entry, "id"), (int)Number(file, "id"), Text(entry, "version", "?"), Text(entry, "notes"),
                     Text(file, "fileName", "build.zip"), Number(file, "fileSize")));
 
                 break;
@@ -182,8 +182,19 @@ public sealed class LauncherApi(HttpClient http, Settings settings)
     private static string Text(JsonElement element, string name, string fallback = "")
         => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? fallback : fallback;
 
-    private static int Number(JsonElement element, string name)
-        => element.TryGetProperty(name, out var value) && value.TryGetInt64(out var number) ? (int)number : 0;
+    // A number as the server wrote it: as a number, or as a text of digits (which it has been seen to do)
+    private static long Number(JsonElement element, string name)
+    {
+        if (!element.TryGetProperty(name, out var value))
+            return 0;
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number when value.TryGetInt64(out var number) => number,
+            JsonValueKind.String when long.TryParse(value.GetString(), out var number) => number,
+            _ => 0,
+        };
+    }
 
     private static bool Flag(JsonElement element, string name)
         => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;

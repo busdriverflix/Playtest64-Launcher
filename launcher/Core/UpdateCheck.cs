@@ -31,8 +31,9 @@ public static class UpdateCheck
         {
             return new UpdateResult(UpdateKind.SignedOut);
         }
-        catch (LauncherException)
+        catch (Exception)
         {
+            // no network, or an answer it cannot read: either way, try again later
             return new UpdateResult(UpdateKind.Offline);
         }
 

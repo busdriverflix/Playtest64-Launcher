@@ -101,6 +101,11 @@ public partial class MainWindow : Window
             ShowPage(_builds.Count > 0 || _context.Settings.SignedIn);
             StatusText.Text = ex.Message;
         }
+        catch (Exception ex)
+        {
+            ShowPage(_builds.Count > 0 || _context.Settings.SignedIn);
+            StatusText.Text = "Unerwarteter Fehler: " + ex.Message;
+        }
         finally
         {
             SetBusy(false);
@@ -117,9 +122,9 @@ public partial class MainWindow : Window
             await _context.Api.LoginAsync(EmailBox.Text?.Trim() ?? "", PasswordBox.Text ?? "");
             PasswordBox.Text = "";			// the password is not kept anywhere
         }
-        catch (LauncherException ex)
+        catch (Exception ex)
         {
-            StatusText.Text = ex.Message;
+            StatusText.Text = ex is LauncherException ? ex.Message : "Unerwarteter Fehler: " + ex.Message;
             SetBusy(false);
             return;
         }
@@ -146,9 +151,9 @@ public partial class MainWindow : Window
                 _context.Store.Play(build);
                 Close();
             }
-            catch (LauncherException ex)
+            catch (Exception ex)
             {
-                StatusText.Text = ex.Message;
+                StatusText.Text = ex is LauncherException ? ex.Message : "Unerwarteter Fehler: " + ex.Message;
             }
 
             return;
@@ -176,10 +181,10 @@ public partial class MainWindow : Window
             ShowPage(false);
             StatusText.Text = ex.Message;
         }
-        catch (LauncherException ex)
+        catch (Exception ex)
         {
             DownloadBar.Value = 0;
-            StatusText.Text = ex.Message;
+            StatusText.Text = ex is LauncherException ? ex.Message : "Unerwarteter Fehler: " + ex.Message;
         }
         finally
         {

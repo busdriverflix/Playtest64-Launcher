@@ -49,6 +49,30 @@ public class LauncherTests
     }
 
     [Fact]
+    public async Task An_answer_with_numbers_as_text_and_missing_notes_is_read_all_the_same()
+    {
+        if (!OnLinux)
+            return;
+
+        using var rig = new Rig();
+
+        // as the real server has been seen to answer: the size as a text, the notes null
+        rig.Server.Builds.Clear();
+        rig.Server.Builds.Add(new
+        {
+            id = "7", version = "v.0.2.1", notes = (string?)null,
+            files = new object[] { new { id = "7", platform = "Linux", fileName = "GameA-linux-x64-v0.2.1.zip", fileSize = "123456", available = true } },
+        });
+
+        var builds = await rig.Api.GetBuildsAsync();
+
+        Assert.Single(builds);
+        Assert.Equal(7, builds[0].BuildId);
+        Assert.Equal(123456, builds[0].Size);
+        Assert.Equal("", builds[0].Notes);
+    }
+
+    [Fact]
     public async Task Installing_downloads_unpacks_marks_the_build_complete_and_makes_the_game_runnable()
     {
         if (!OnLinux)
