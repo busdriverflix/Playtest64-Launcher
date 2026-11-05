@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Playtest64.Launcher.Views;
@@ -21,6 +22,8 @@ public sealed class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        ApplyTheme();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             if (desktop.Args?.Contains("--background") == true)
@@ -39,6 +42,35 @@ public sealed class App : Application
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    /// <summary>
+    /// Puts the look of the day (or the plain one, when the person turned the season's look off) into the
+    /// resources the windows read by name. Safe to call again: windows that are open follow it.
+    /// </summary>
+    public void ApplyTheme()
+    {
+        var palette = Themes.Current(_context.Settings.SeasonalLook);
+
+        Brush("ThemeBg", palette.Bg);
+        Brush("ThemeSurface", palette.Surface);
+        Brush("ThemeSurfaceHover", palette.SurfaceHover);
+        Brush("ThemeBorder", palette.Border);
+        Brush("ThemePrimary", palette.Primary);
+        Brush("ThemeText", palette.Text);
+        Brush("ThemeMuted", palette.Muted);
+        Brush("ThemeDim", palette.Dim);
+
+        // The Fluent controls take their accent from these: the main button, the progress bar, the ticked boxes
+        Resources["SystemAccentColor"] = Color.Parse(palette.Primary);
+        Brush("AccentButtonBackground", palette.Primary);
+        Brush("AccentButtonBackgroundPointerOver", palette.PrimaryHover);
+        Brush("AccentButtonBackgroundPressed", palette.PrimaryHover);
+        Brush("AccentButtonForeground", palette.OnPrimary);
+        Brush("AccentButtonForegroundPointerOver", palette.OnPrimary);
+        Brush("AccentButtonForegroundPressed", palette.OnPrimary);
+    }
+
+    private void Brush(string key, string colour) => Resources[key] = new Avalonia.Media.SolidColorBrush(Color.Parse(colour));
 
     private void AddTrayIcon(IClassicDesktopStyleApplicationLifetime desktop)
     {

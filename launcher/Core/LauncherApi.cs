@@ -74,6 +74,55 @@ public sealed class LauncherApi(HttpClient http, Settings settings)
         return builds;
     }
 
+    public async Task<NewsFeed> GetNewsAsync(CancellationToken ct = default)
+    {
+        using var request = Authorised(HttpMethod.Get, "/api/news");
+        using var response = await SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
+
+        CheckSignedIn(response);
+
+        using var json = TryParse(await response.Content.ReadAsStringAsync(ct));
+
+        if (response.StatusCode != HttpStatusCode.OK || json?.RootElement.TryGetProperty("articles", out var articles) != true ||
+            articles.ValueKind != JsonValueKind.Array)
+            throw new LauncherException("Die Neuigkeiten konnten nicht geladen werden.");
+
+        var items = new List<NewsItem>();
+
+        foreach (var article in articles.EnumerateArray())
+        {
+            var pictures = new List<NewsPicture>();
+
+            if (article.TryGetProperty("images", out var images) && images.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var image in images.EnumerateArray())
+                    pictures.Add(new NewsPicture((int)Number(image, "id"), Text(image, "caption")));
+            }
+
+            string? version = null;
+
+            if (article.TryGetProperty("build", out var build) && build.ValueKind == JsonValueKind.Object)
+                version = Text(build, "version");
+
+            items.Add(new NewsItem((int)Number(article, "id"), Text(article, "title"), Text(article, "content"),
+                Text(article, "date"), pictures, version));
+        }
+
+        return new NewsFeed(items, Text(json.RootElement, "mediaTicket"));
+    }
+
+    /// <summary>The bytes of one picture of a post (the ticket is the one the news came with).</summary>
+    public async Task<byte[]> GetPictureAsync(int id, string ticket, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{settings.Server}/api/news/media/{id}?ticket={Uri.EscapeDataString(ticket)}");
+        using var response = await SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
+
+        if (response.StatusCode != HttpStatusCode.OK)
+            throw new LauncherException("Ein Bild konnte nicht geladen werden.");
+
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
+
     /// <summary>Downloads a build's file to `path`. `progress` gets 0..1 as it arrives (nothing when the size is not known).</summary>
     public async Task DownloadAsync(BuildInfo build, string path, IProgress<double>? progress = null, CancellationToken ct = default)
     {

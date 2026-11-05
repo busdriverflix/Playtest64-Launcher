@@ -22,6 +22,18 @@ public sealed class FakeServer : IDisposable
     /// <summary>The zip of each file id. Replace one to serve something else (a damaged zip, a hostile one).</summary>
     public Dictionary<int, byte[]> Zips { get; } = new() { [1] = MakeZip("0.2.0"), [2] = MakeZip("0.2.1") };
 
+    /// <summary>The news posts, newest first, as the real server writes them (a post without a build has null).</summary>
+    public List<object> Articles { get; } =
+    [
+        new
+        {
+            id = 8, title = "Update: Animationen", content = "Neu:\n- Skid\n- Seitensalto\n\nViel Spaß!", date = "2026-10-30",
+            createdAt = "2026-10-30T12:00:00Z", images = new[] { new { id = 3, caption = (string?)"Ein Bild" } },
+            build = new { id = 2, version = "0.2.1" },
+        },
+        new { id = 6, title = "Ankündigung", content = "Hallo", date = "2026-10-25", createdAt = "2026-10-25T12:00:00Z", images = Array.Empty<object>(), build = (object?)null },
+    ];
+
     /// <summary>The builds the list shows, newest first.</summary>
     public List<object> Builds { get; }
 
@@ -144,6 +156,20 @@ public sealed class FakeServer : IDisposable
             return;
         }
 
+        // a picture is asked for by an address that carries a ticket, like the website's <img> tags do
+        if (path.StartsWith("/api/news/media/"))
+        {
+            if (!authorised && context.Request.QueryString["ticket"] != "ticket-1")
+            {
+                Json(context, 401, new { message = "Nicht angemeldet." });
+                return;
+            }
+
+            context.Response.ContentType = "image/png";
+            context.Response.OutputStream.Write(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+            return;
+        }
+
         if (!authorised)
         {
             Json(context, 401, new { message = "Nicht angemeldet." });
@@ -153,6 +179,12 @@ public sealed class FakeServer : IDisposable
         if (path == "/api/builds")
         {
             Json(context, 200, Builds);
+            return;
+        }
+
+        if (path == "/api/news")
+        {
+            Json(context, 200, new { mediaTicket = "ticket-1", articles = Articles });
             return;
         }
 

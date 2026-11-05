@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 
 namespace Playtest64.Launcher.Views;
@@ -9,7 +10,7 @@ public partial class MainWindow : Window
     private readonly LauncherContext _context;
     private IReadOnlyList<BuildInfo> _builds = [];
     private bool _busy;
-    private bool _settingAutostart;			// the box is being set from code, which is not the person changing it
+    private bool _settingBoxes;				// the boxes are being set from code, which is not the person changing them
 
     // The designer and the XAML loader want a constructor with no arguments
     public MainWindow() : this(new LauncherContext())
@@ -22,7 +23,8 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         EmailBox.Text = context.Settings.Email;
-        SetAutostartBox(Autostart.IsEnabled());
+        SetBoxes();
+        ShowSeason();
 
         Opened += async (_, _) =>
         {
@@ -45,11 +47,21 @@ public partial class MainWindow : Window
         IsEnabled = !busy;
     }
 
-    private void SetAutostartBox(bool on)
+    private void SetBoxes()
     {
-        _settingAutostart = true;
-        AutostartBox.IsChecked = on;
-        _settingAutostart = false;
+        _settingBoxes = true;
+        AutostartBox.IsChecked = Autostart.IsEnabled();
+        SeasonBox.IsChecked = _context.Settings.SeasonalLook;
+        _settingBoxes = false;
+    }
+
+    // Which look is on, in words under the name
+    private void ShowSeason()
+    {
+        var palette = Themes.Current(_context.Settings.SeasonalLook);
+
+        SeasonText.Text = palette == Themes.Ordinary ? "Launcher für den Spieltest" : palette.Name + "-Look";
+        UserText.Text = _context.Settings.SignedIn ? _context.Settings.Email : "";
     }
 
     private BuildInfo? Picked => BuildBox.SelectedIndex >= 0 && BuildBox.SelectedIndex < _builds.Count ? _builds[BuildBox.SelectedIndex] : null;
@@ -89,6 +101,9 @@ public partial class MainWindow : Window
                 _context.Settings.AnnouncedBuild = _builds[0].BuildId;
                 _context.Settings.Save();
             }
+
+            ShowSeason();
+            _ = LoadNewsAsync();
         }
         catch (SignedOutException ex)
         {
@@ -110,6 +125,74 @@ public partial class MainWindow : Window
         {
             SetBusy(false);
         }
+    }
+
+    // The news come after the list and never hold it up: if they fail the person can still play
+    private async Task LoadNewsAsync()
+    {
+        var panel = NewsPanel;
+        var status = NewsStatus;
+
+        try
+        {
+            var feed = await _context.Api.GetNewsAsync();
+
+            panel.Children.Clear();
+            status.Text = feed.Items.Count == 0 ? "Noch keine Neuigkeiten." : "";
+
+            foreach (var item in feed.Items)
+            {
+                var card = NewsCards.Build(item, PickBuildByVersion);
+                panel.Children.Add(card.Control);
+                _ = LoadPicturesAsync(item, card.Pictures, feed.MediaTicket);
+            }
+        }
+        catch (SignedOutException)
+        {
+            ShowPage(false);
+            StatusText.Text = "Die Anmeldung ist abgelaufen. Bitte melde dich neu an.";
+        }
+        catch (Exception ex)
+        {
+            status.Text = ex is LauncherException ? ex.Message : "Die Neuigkeiten konnten nicht angezeigt werden.";
+        }
+    }
+
+    // A post's screenshots, as they come in: a picture that cannot be had is left out, not an error
+    private async Task LoadPicturesAsync(NewsItem item, Panel target, string ticket)
+    {
+        foreach (var picture in item.Pictures.Take(4))
+        {
+            try
+            {
+                var bytes = await _context.Api.GetPictureAsync(picture.Id, ticket);
+                using var stream = new MemoryStream(bytes);
+
+                target.Children.Add(new Image
+                {
+                    Source = new Bitmap(stream),
+                    Stretch = Avalonia.Media.Stretch.Uniform,
+                    StretchDirection = Avalonia.Media.StretchDirection.DownOnly,
+                    MaxHeight = 280,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                });
+            }
+            catch (Exception)
+            {
+                // left out
+            }
+        }
+    }
+
+    // "Build v.0.2.1 auswählen" on a post: the list jumps to it
+    private void PickBuildByVersion(string version)
+    {
+        var index = _builds.ToList().FindIndex(b => b.Version == version);
+
+        if (index >= 0)
+            BuildBox.SelectedIndex = index;
+        else
+            StatusText.Text = $"Der Build {version} gibt es für {Platform.Name} nicht.";
     }
 
     private async void SignInButton_OnClick(object? sender, RoutedEventArgs e)
@@ -194,7 +277,7 @@ public partial class MainWindow : Window
 
     private void AutostartBox_OnChanged(object? sender, RoutedEventArgs e)
     {
-        if (_settingAutostart)
+        if (_settingBoxes)
             return;
 
         var wanted = AutostartBox.IsChecked == true;
@@ -205,9 +288,20 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is LauncherException or IOException or UnauthorizedAccessException)
         {
-            SetAutostartBox(!wanted);
+            SetBoxes();
             StatusText.Text = "Das ließ sich nicht umstellen.";
         }
+    }
+
+    private void SeasonBox_OnChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_settingBoxes)
+            return;
+
+        _context.Settings.SeasonalLook = SeasonBox.IsChecked == true;
+        _context.Settings.Save();
+        ((App)Avalonia.Application.Current!).ApplyTheme();
+        ShowSeason();
     }
 
     private void SignOutButton_OnClick(object? sender, RoutedEventArgs e)
@@ -215,6 +309,8 @@ public partial class MainWindow : Window
         _context.Settings.SignOut();
         _builds = [];
         StatusText.Text = "";
+        NewsPanel.Children.Clear();
         ShowPage(false);
+        ShowSeason();
     }
 }

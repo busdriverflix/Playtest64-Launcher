@@ -11,13 +11,20 @@ on Linux would have been a project of its own).
 
 ## State: a first scaffold
 
-Done and tested on Linux (`dotnet test`, 13 tests against a stand-in server): sign in, list the builds that have a file
+Done and tested on Linux (`dotnet test`, 33 tests against a stand-in server): sign in, list the builds that have a file
 for this system, download with progress, unpack safely (a path that climbs out of the folder is refused, a file that is
 not a zip is refused), mark a build complete only when it is, start it in its own folder, and the background check
 (announces a new build once, notices a token that ran out, copes with no network).
 
 **Not run by me**, so the first look is yours: the window itself (`launcher/Views/MainWindow.axaml`), the message in the
 corner (`ToastWindow`), the tray icon of the background mode, and everything on Windows. It builds for both.
+
+The window shows the website's news (text with paragraphs and bullet lists as on the site, screenshots, and a button that
+picks the build a post announces) next to the build list, and wears the website's seasonal look (Halloween 1 Oct - 7 Nov,
+Weihnachten 1-26 Dec, Silvester 27 Dec - 3 Jan, Ostern two weeks before Easter Sunday to Easter Monday): `Core/Themes.cs`
+has the colours and the dates, which have to be kept in step with the website's `themes.css` and `useTheme.ts` by hand. A
+checkbox switches the season's look off; `PLAYTEST_THEME=weihnachten` (and so on) forces one for a look. The flourishes of the
+website (bats, snow, the Creepster font) are not in.
 
 ### Still to do
 
