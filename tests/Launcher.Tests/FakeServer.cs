@@ -22,6 +22,11 @@ public sealed class FakeServer : IDisposable
     /// <summary>The zip of each file id. Replace one to serve something else (a damaged zip, a hostile one).</summary>
     public Dictionary<int, byte[]> Zips { get; } = new() { [1] = MakeZip("0.2.0"), [2] = MakeZip("0.2.1") };
 
+    /// <summary>The launcher the server offers: a version (null = none uploaded), its bytes, and the hash it claims (null = the right one).</summary>
+    public string? LauncherVersion { get; set; }
+    public byte[] LauncherFile { get; set; } = Encoding.UTF8.GetBytes("#!/bin/sh\necho new launcher\n");
+    public string? LauncherHash { get; set; }
+
     /// <summary>The news posts, newest first, as the real server writes them (a post without a build has null).</summary>
     public List<object> Articles { get; } =
     [
@@ -185,6 +190,28 @@ public sealed class FakeServer : IDisposable
         if (path == "/api/news")
         {
             Json(context, 200, new { mediaTicket = "ticket-1", articles = Articles });
+            return;
+        }
+
+        if (path == "/api/launcher/latest")
+        {
+            if (LauncherVersion == null)
+            {
+                Json(context, 404, new { message = "Für diese Plattform gibt es keinen Launcher." });
+                return;
+            }
+
+            var hash = LauncherHash ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(LauncherFile)).ToLowerInvariant();
+
+            Json(context, 200, new { id = 1, version = LauncherVersion, platform = context.Request.QueryString["platform"], fileName = "Playtest64Launcher", fileBytes = LauncherFile.Length, sha256 = hash, available = true });
+            return;
+        }
+
+        if (path == "/api/launcher/files/1/download")
+        {
+            context.Response.ContentType = "application/octet-stream";
+            context.Response.ContentLength64 = LauncherFile.Length;
+            context.Response.OutputStream.Write(LauncherFile);
             return;
         }
 

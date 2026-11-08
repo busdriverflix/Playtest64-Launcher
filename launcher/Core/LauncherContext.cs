@@ -13,7 +13,7 @@ public sealed class LauncherContext
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
 
         // a server that tells a client who it is gets a name that says what this is, and nothing else
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("Playtest64-Launcher/1.0");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("Playtest64-Launcher/" + SelfUpdate.CurrentText);
 
         Settings = Settings.Load(dataDir);
         Api = new LauncherApi(http, Settings);

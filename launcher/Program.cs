@@ -15,6 +15,8 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        SelfUpdate.CleanUp();
+
         if (args.Contains("--check"))
             return CheckOnce();
 
@@ -32,7 +34,15 @@ internal static class Program
         var context = new LauncherContext();
         var result = UpdateCheck.RunAsync(context.Settings, context.Api, context.Store).GetAwaiter().GetResult();
 
-        Console.WriteLine(result.Kind == UpdateKind.NewBuild ? $"NEW {result.Build!.Version}" : result.Kind.ToString().ToUpperInvariant());
+        var text = result.Kind switch
+        {
+            UpdateKind.NewBuild => $"NEW {result.Build!.Version}",
+            UpdateKind.NewLauncher => $"LAUNCHER {result.Launcher!.Version}",
+            UpdateKind.NewBoth => $"NEW {result.Build!.Version} LAUNCHER {result.Launcher!.Version}",
+            _ => result.Kind.ToString().ToUpperInvariant(),
+        };
+
+        Console.WriteLine(text);
 
         return 0;
     }

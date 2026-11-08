@@ -31,8 +31,12 @@ website (bats, snow, the Creepster font) are not in.
 - **Linux libraries.** .NET needs the system's OpenSSL for HTTPS, and Avalonia needs the usual X11 libraries; nearly every
   desktop has them, not every one. Installing something for the tester needs administrator rights and a package manager
   per distribution, so the launcher does not do that.
-- **The launcher's own updates**, an installer or a shortcut, signing the Windows build (without it SmartScreen warns), the
-  website's download page for the launcher.
+- An installer or a shortcut, signing the Windows build (without it SmartScreen warns).
+- **The launcher's own updates are in**: it asks `GET /api/launcher/latest?platform=` (the version in `Launcher.csproj` against the
+  one the admin typed in when uploading), shows an "Launcher-Update auf X" button in the bar and tells of it once in the
+  background toast. A click downloads the file next to the running one, checks its SHA-256, renames the running file to
+  `.old`, moves the new one in, starts it and ends; the next start deletes the `.old`. **Bump `<Version>` in
+  `Launcher.csproj` before every `publish.sh` that is uploaded**, or the new launcher thinks it is the old one.
 - **Tray icon on Linux** depends on the desktop (it needs a StatusNotifier host); without one the background mode still
   works but has no icon to quit it by.
 - A "feedback" page in the window, later.

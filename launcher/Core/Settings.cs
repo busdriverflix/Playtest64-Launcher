@@ -20,6 +20,9 @@ public sealed class Settings
     public string Token { get; set; } = "";
     public int AnnouncedBuild { get; set; }
 
+    /// <summary>The newest launcher version the person has been told about.</summary>
+    public string AnnouncedLauncher { get; set; } = "";
+
     /// <summary>Whether the look follows the season (Halloween in October, and so on), as on the website.</summary>
     public bool SeasonalLook { get; set; } = true;
 

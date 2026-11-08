@@ -4,11 +4,13 @@ public enum UpdateKind
 {
     Nothing,
     NewBuild,
+    NewLauncher,
+    NewBoth,
     SignedOut,
     Offline,
 }
 
-public sealed record UpdateResult(UpdateKind Kind, BuildInfo? Build = null);
+public sealed record UpdateResult(UpdateKind Kind, BuildInfo? Build = null, LauncherRelease? Launcher = null);
 
 /// <summary>
 /// The question the background check asks: is there a build the person has not been told about and does
@@ -38,13 +40,39 @@ public static class UpdateCheck
         }
 
         var newest = builds.FirstOrDefault();
+        BuildInfo? fresh = null;
 
-        if (newest == null || newest.BuildId == settings.AnnouncedBuild || store.IsInstalled(newest))
+        if (newest != null && newest.BuildId != settings.AnnouncedBuild && !store.IsInstalled(newest))
+            fresh = newest;
+
+        var launcher = await NewerLauncherAsync(settings, api, ct);
+
+        if (fresh == null && launcher == null)
             return new UpdateResult(UpdateKind.Nothing);
 
-        settings.AnnouncedBuild = newest.BuildId;
+        if (fresh != null)
+            settings.AnnouncedBuild = fresh.BuildId;
+
+        if (launcher != null)
+            settings.AnnouncedLauncher = launcher.Version;
+
         settings.Save();
 
-        return new UpdateResult(UpdateKind.NewBuild, newest);
+        return new UpdateResult(fresh != null && launcher != null ? UpdateKind.NewBoth : fresh != null ? UpdateKind.NewBuild : UpdateKind.NewLauncher, fresh, launcher);
+    }
+
+    /// <summary>The launcher the server offers if it is newer than this one and the person has not been told of it yet. Never fails: a server without the route simply has none.</summary>
+    private static async Task<LauncherRelease?> NewerLauncherAsync(Settings settings, LauncherApi api, CancellationToken ct)
+    {
+        try
+        {
+            var release = await api.GetLauncherReleaseAsync(ct);
+
+            return release != null && SelfUpdate.IsNewer(release.Version) && release.Version != settings.AnnouncedLauncher ? release : null;
+        }
+        catch (LauncherException)
+        {
+            return null;
+        }
     }
 }

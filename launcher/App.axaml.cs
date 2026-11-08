@@ -125,6 +125,14 @@ public sealed class App : Application
                         ShowToast("Neuer Playtest-Build", $"Version {result.Build!.Version} ist da. Klicke hier, um den Launcher zu öffnen.");
                         break;
 
+                    case UpdateKind.NewLauncher:
+                        ShowToast("Launcher-Update", $"Version {result.Launcher!.Version} ist da. Klicke hier, um den Launcher zu öffnen und zu aktualisieren.");
+                        break;
+
+                    case UpdateKind.NewBoth:
+                        ShowToast("Updates für Playtest64", $"Neuer Build {result.Build!.Version} und neuer Launcher {result.Launcher!.Version}. Klicke hier, um den Launcher zu öffnen.");
+                        break;
+
                     case UpdateKind.SignedOut when !signedOutTold:
                         signedOutTold = true;
                         ShowToast("Playtest64", "Bitte melde dich im Launcher neu an, damit nach Updates gesucht werden kann.");

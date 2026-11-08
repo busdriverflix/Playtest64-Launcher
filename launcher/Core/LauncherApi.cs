@@ -123,10 +123,40 @@ public sealed class LauncherApi(HttpClient http, Settings settings)
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
 
-    /// <summary>Downloads a build's file to `path`. `progress` gets 0..1 as it arrives (nothing when the size is not known).</summary>
-    public async Task DownloadAsync(BuildInfo build, string path, IProgress<double>? progress = null, CancellationToken ct = default)
+    /// <summary>The newest launcher the server has for this system, or null when it has none.</summary>
+    public async Task<LauncherRelease?> GetLauncherReleaseAsync(CancellationToken ct = default)
     {
-        using var request = Authorised(HttpMethod.Get, $"/api/builds/files/{build.FileId}/download");
+        using var request = Authorised(HttpMethod.Get, "/api/launcher/latest?platform=" + Platform.Name);
+        using var response = await SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
+
+        CheckSignedIn(response);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        using var json = TryParse(await response.Content.ReadAsStringAsync(ct));
+
+        if (response.StatusCode != HttpStatusCode.OK || json?.RootElement.ValueKind != JsonValueKind.Object)
+            throw new LauncherException("Die Launcher-Version konnte nicht geprüft werden.");
+
+        var root = json.RootElement;
+
+        if (!Flag(root, "available"))
+            return null;
+
+        return new LauncherRelease((int)Number(root, "id"), Text(root, "version"), Text(root, "fileName", "Playtest64Launcher"), Number(root, "fileBytes"), Text(root, "sha256"));
+    }
+
+    /// <summary>Downloads a build's file to `path`. `progress` gets 0..1 as it arrives (nothing when the size is not known).</summary>
+    public Task DownloadAsync(BuildInfo build, string path, IProgress<double>? progress = null, CancellationToken ct = default)
+        => DownloadFromAsync($"/api/builds/files/{build.FileId}/download", path, progress, ct);
+
+    public Task DownloadLauncherAsync(LauncherRelease release, string path, IProgress<double>? progress = null, CancellationToken ct = default)
+        => DownloadFromAsync($"/api/launcher/files/{release.Id}/download", path, progress, ct);
+
+    private async Task DownloadFromAsync(string urlPath, string path, IProgress<double>? progress, CancellationToken ct)
+    {
+        using var request = Authorised(HttpMethod.Get, urlPath);
         using var response = await SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
 
         CheckSignedIn(response);

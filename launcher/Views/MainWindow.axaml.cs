@@ -9,6 +9,7 @@ public partial class MainWindow : Window
 {
     private readonly LauncherContext _context;
     private IReadOnlyList<BuildInfo> _builds = [];
+    private LauncherRelease? _launcherUpdate;
     private bool _busy;
     private bool _settingBoxes;				// the boxes are being set from code, which is not the person changing them
 
@@ -105,6 +106,7 @@ public partial class MainWindow : Window
 
             ShowSeason();
             _ = LoadNewsAsync();
+            _ = CheckLauncherAsync();
         }
         catch (SignedOutException ex)
         {
@@ -124,6 +126,63 @@ public partial class MainWindow : Window
         }
         finally
         {
+            SetBusy(false);
+        }
+    }
+
+    // Whether the server has a newer launcher: the button in the bar appears when it has. Never in the way, never an error.
+    private async Task CheckLauncherAsync()
+    {
+        try
+        {
+            var release = await _context.Api.GetLauncherReleaseAsync();
+
+            _launcherUpdate = release != null && SelfUpdate.IsNewer(release.Version) ? release : null;
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        UpdateButton.IsVisible = _launcherUpdate != null && SelfUpdate.OwnPath != null;
+        UpdateButton.Content = _launcherUpdate == null ? "" : $"Launcher-Update auf {_launcherUpdate.Version}";
+
+        // seen in the window, so the background check does not say it again
+        if (_launcherUpdate != null)
+        {
+            _context.Settings.AnnouncedLauncher = _launcherUpdate.Version;
+            _context.Settings.Save();
+        }
+    }
+
+    private async void UpdateButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var release = _launcherUpdate;
+        var own = SelfUpdate.OwnPath;
+
+        if (release == null || own == null || _busy)
+            return;
+
+        SetBusy(true);
+        StatusText.Text = $"Lade den Launcher {release.Version} ...";
+        DownloadBar.Value = 0;
+
+        try
+        {
+            await SelfUpdate.ApplyAsync(_context.Api, release, own, new Progress<double>(p => DownloadBar.Value = p));
+            StatusText.Text = "Der Launcher startet neu ...";
+            SelfUpdate.Restart(own);
+            Close();
+            (Avalonia.Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.Shutdown();
+        }
+        catch (LauncherException ex)
+        {
+            StatusText.Text = ex.Message;
+            SetBusy(false);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Unerwarteter Fehler: " + ex.Message;
             SetBusy(false);
         }
     }
