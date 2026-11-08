@@ -73,6 +73,7 @@ public partial class MainWindow : Window
 
         ActionButton.IsEnabled = build != null;
         NotesText.Text = build?.Notes ?? "";
+        NotesBox.IsVisible = !string.IsNullOrWhiteSpace(NotesText.Text);
         ActionButton.Content = build == null ? "Kein Build" : _context.Store.IsInstalled(build) ? "Spielen" : "Herunterladen und installieren";
     }
 
@@ -302,6 +303,19 @@ public partial class MainWindow : Window
         _context.Settings.Save();
         ((App)Avalonia.Application.Current!).ApplyTheme();
         ShowSeason();
+    }
+
+    // The website's feedback page, in the person's own browser
+    private async void FeedbackButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Launcher.LaunchUriAsync(new Uri(_context.Settings.Server + "/feedback"));
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Die Feedback-Seite ließ sich nicht öffnen: " + ex.Message;
+        }
     }
 
     private void SignOutButton_OnClick(object? sender, RoutedEventArgs e)
