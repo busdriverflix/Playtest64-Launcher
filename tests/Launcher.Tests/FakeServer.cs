@@ -24,6 +24,8 @@ public sealed class FakeServer : IDisposable
 
     /// <summary>The launcher the server offers: a version (null = none uploaded), its bytes, and the hash it claims (null = the right one).</summary>
     public string? LauncherVersion { get; set; }
+    /// <summary>The version the last launcher check said it was.</summary>
+    public string? LauncherCheckVersion { get; private set; }
     public byte[] LauncherFile { get; set; } = Encoding.UTF8.GetBytes("#!/bin/sh\necho new launcher\n");
     public string? LauncherHash { get; set; }
 
@@ -195,6 +197,8 @@ public sealed class FakeServer : IDisposable
 
         if (path == "/api/launcher/latest")
         {
+            LauncherCheckVersion = context.Request.QueryString["version"];
+
             if (LauncherVersion == null)
             {
                 Json(context, 404, new { message = "Für diese Plattform gibt es keinen Launcher." });

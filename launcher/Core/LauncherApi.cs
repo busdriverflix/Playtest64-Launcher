@@ -123,10 +123,10 @@ public sealed class LauncherApi(HttpClient http, Settings settings)
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
 
-    /// <summary>The newest launcher the server has for this system, or null when it has none.</summary>
+    /// <summary>The newest launcher the server has for this system, or null when it has none. Says which version this one is, so the administrator can see who uses which.</summary>
     public async Task<LauncherRelease?> GetLauncherReleaseAsync(CancellationToken ct = default)
     {
-        using var request = Authorised(HttpMethod.Get, "/api/launcher/latest?platform=" + Platform.Name);
+        using var request = Authorised(HttpMethod.Get, "/api/launcher/latest?platform=" + Platform.Name + "&version=" + Uri.EscapeDataString(SelfUpdate.Current.ToString(3)));
         using var response = await SendAsync(request, HttpCompletionOption.ResponseContentRead, ct);
 
         CheckSignedIn(response);

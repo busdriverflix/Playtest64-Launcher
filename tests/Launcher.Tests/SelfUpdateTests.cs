@@ -47,6 +47,17 @@ public class SelfUpdateTests
 	}
 
 	[Fact]
+	public async Task The_check_says_which_version_this_launcher_is()
+	{
+		using var rig = new Rig();
+		rig.Server.LauncherVersion = "9.0.0";
+
+		await rig.Api.GetLauncherReleaseAsync();
+
+		Assert.Equal(SelfUpdate.Current.ToString(3), rig.Server.LauncherCheckVersion);
+	}
+
+	[Fact]
 	public async Task The_new_file_takes_the_old_ones_place_and_the_old_one_is_kept_beside_it()
 	{
 		using var rig = new Rig();
