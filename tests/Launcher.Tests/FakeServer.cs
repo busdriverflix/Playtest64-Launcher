@@ -70,7 +70,7 @@ public sealed class FakeServer : IDisposable
             var game = zip.CreateEntry($"{top}/game", CompressionLevel.Optimal);
             game.ExternalAttributes = 0b_100_000_111_101_101 << 16;			// 0100755
             using (var w = new StreamWriter(game.Open()))
-                w.Write("#!/bin/sh\necho started > started.txt\n");
+                w.Write("#!/bin/sh\necho started > started.txt\necho \"graphics=${P64_GRAPHICS:-none}\" > graphics.txt\n");
 
             var pack = zip.CreateEntry($"{top}/game.p64pak", CompressionLevel.Optimal);
             using (var w = pack.Open())

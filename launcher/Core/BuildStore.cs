@@ -63,7 +63,7 @@ public sealed partial class BuildStore(string dataDir, LauncherApi api)
         File.Delete(zip);
     }
 
-    public void Play(BuildInfo build)
+    public void Play(BuildInfo build, string graphics = Graphics.Auto)
     {
         var markerPath = Path.Combine(FolderOf(build), Marker);
 
@@ -78,7 +78,13 @@ public sealed partial class BuildStore(string dataDir, LauncherApi api)
 
         try
         {
-            using var process = Process.Start(new ProcessStartInfo(program) { WorkingDirectory = folder, UseShellExecute = false });
+            var start = new ProcessStartInfo(program) { WorkingDirectory = folder, UseShellExecute = false };
+
+            // As a variable and not an argument: a game from before there was a choice ignores a variable, and would take an argument for its pack
+            if (Graphics.IsKnown(graphics) && graphics != Graphics.Auto)
+                start.Environment["P64_GRAPHICS"] = graphics;
+
+            using var process = Process.Start(start);
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException)
         {

@@ -84,7 +84,9 @@
                             Height="44" FontSize="15" Click="ActionButton_OnClick"/>
                     <ProgressBar Name="DownloadBar" Minimum="0" Maximum="1" Height="6"/>
 
-                    <CheckBox Name="AutostartBox" Margin="0,10,0,0" Content="Nach Updates suchen, wenn ich mich anmelde"
+                    <TextBlock Text="Grafik-API" Margin="0,10,0,0" Foreground="{DynamicResource ThemeMuted}"/>
+                    <ComboBox Name="GraphicsBox" HorizontalAlignment="Stretch" SelectionChanged="GraphicsBox_OnChanged"/>
+                    <CheckBox Name="AutostartBox" Margin="0,4,0,0" Content="Nach Updates suchen, wenn ich mich anmelde"
                               IsCheckedChanged="AutostartBox_OnChanged"/>
                     <CheckBox Name="SeasonBox" Content="Saison-Look (wie auf der Webseite)" IsCheckedChanged="SeasonBox_OnChanged"/>
                     <Button Name="FeedbackButton" Content="Feedback geben" HorizontalAlignment="Stretch"

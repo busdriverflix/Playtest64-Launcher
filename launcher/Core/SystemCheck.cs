@@ -35,7 +35,7 @@ public sealed record SystemReport(IReadOnlyList<string> MissingLibraries, Vulkan
 		switch (Vulkan)
 		{
 			case VulkanState.NoDevice:
-				lines.Add("Keine Grafikkarte mit Vulkan gefunden. Es fehlt ein Treiber, oder die Grafikkarte ist zu alt für das Spiel.");
+				lines.Add("Keine Grafikkarte mit Vulkan gefunden. Das Spiel startet dann mit OpenGL, das auch auf älteren Karten läuft. Mit einem Vulkan-Treiber läuft es meist besser.");
 				break;
 
 			case VulkanState.SoftwareOnly:

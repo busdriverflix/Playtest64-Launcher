@@ -23,6 +23,9 @@ public sealed class Settings
     /// <summary>The newest launcher version the person has been told about.</summary>
     public string AnnouncedLauncher { get; set; } = "";
 
+    /// <summary>The graphics API the game is started with: "auto" (the game decides: Vulkan, OpenGL where there is no Vulkan), "vulkan" or "opengl".</summary>
+    public string GraphicsBackend { get; set; } = Graphics.Auto;
+
     /// <summary>Whether the look follows the season (Halloween in October, and so on), as on the website.</summary>
     public bool SeasonalLook { get; set; } = true;
 

@@ -115,6 +115,46 @@ public class LauncherTests
         Assert.True(File.Exists(started));
     }
 
+    [Theory]
+    [InlineData("auto", "graphics=none")]
+    [InlineData("vulkan", "graphics=vulkan")]
+    [InlineData("opengl", "graphics=opengl")]
+    [InlineData("nonsense", "graphics=none")]
+    public async Task The_game_is_told_which_graphics_api_to_start_with_and_auto_says_nothing(string choice, string expected)
+    {
+        if (!OnLinux)
+            return;
+
+        using var rig = new Rig();
+        var build = (await rig.Api.GetBuildsAsync())[0];
+
+        await rig.Store.InstallAsync(build);
+        rig.Store.Play(build, choice);
+
+        var written = Path.Combine(rig.Dir, "builds", "0.2.1", "GameA-linux-x64-v0.2.1", "graphics.txt");
+
+        for (var i = 0; i < 50 && !File.Exists(written); i++)
+            await Task.Delay(100);
+
+        Assert.True(File.Exists(written));
+        Assert.Equal(expected, File.ReadAllText(written).Trim());
+    }
+
+    [Fact]
+    public void The_choice_is_kept_in_the_settings_and_a_stranger_in_the_file_means_auto()
+    {
+        using var rig = new Rig();
+
+        Assert.Equal(Graphics.Auto, rig.Settings.GraphicsBackend);
+
+        rig.Settings.GraphicsBackend = Graphics.OpenGl;
+        rig.Settings.Save();
+
+        Assert.Equal(Graphics.OpenGl, Settings.Load(rig.Dir).GraphicsBackend);
+        Assert.False(Graphics.IsKnown("directx"));
+        Assert.Equal(Graphics.All.Length, Graphics.Labels.Length);
+    }
+
     [Fact]
     public async Task A_build_that_is_not_installed_cannot_be_played()
     {

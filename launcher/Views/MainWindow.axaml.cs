@@ -54,6 +54,8 @@ public partial class MainWindow : Window
         _settingBoxes = true;
         AutostartBox.IsChecked = Autostart.IsEnabled();
         SeasonBox.IsChecked = _context.Settings.SeasonalLook;
+        GraphicsBox.ItemsSource = Graphics.Labels;
+        GraphicsBox.SelectedIndex = Math.Max(0, Array.IndexOf(Graphics.All, _context.Settings.GraphicsBackend));
         _settingBoxes = false;
     }
 
@@ -390,7 +392,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                _context.Store.Play(build);
+                _context.Store.Play(build, _context.Settings.GraphicsBackend);
                 Close();
             }
             catch (Exception ex)
@@ -450,6 +452,15 @@ public partial class MainWindow : Window
             SetBoxes();
             StatusText.Text = "Das ließ sich nicht umstellen.";
         }
+    }
+
+    private void GraphicsBox_OnChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_settingBoxes || GraphicsBox.SelectedIndex < 0)
+            return;
+
+        _context.Settings.GraphicsBackend = Graphics.All[GraphicsBox.SelectedIndex];
+        _context.Settings.Save();
     }
 
     private void SeasonBox_OnChanged(object? sender, RoutedEventArgs e)

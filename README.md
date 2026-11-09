@@ -42,6 +42,10 @@ website (bats, snow, the Creepster font) are not in.
   (llvmpipe) shows a panel above "Spielen"; on apt, dnf, pacman and zypper systems a button installs the packages through
   `pkexec` (the desktop's password dialog), with the command shown for copying. NVIDIA's own driver is never touched.
   `Playtest64Launcher --system` prints the same to the console.
+- **The graphics API box** ("Grafik-API", `Core/Graphics.cs`): automatic, Vulkan or OpenGL, kept in `settings.json` and handed to the game as the
+  environment variable `P64_GRAPHICS` (nothing for automatic). A variable and not an argument, because a game from before there was a
+  choice ignores a variable and would take an argument for its pack. The game decides by itself with automatic: Vulkan, and OpenGL when
+  Vulkan does not start.
 - **Tray icon on Linux** depends on the desktop (it needs a StatusNotifier host); without one the background mode still
   works but has no icon to quit it by.
 - A "feedback" page in the window, later.
