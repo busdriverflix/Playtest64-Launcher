@@ -37,6 +37,11 @@ website (bats, snow, the Creepster font) are not in.
   background toast. A click downloads the file next to the running one, checks its SHA-256, renames the running file to
   `.old`, moves the new one in, starts it and ends; the next start deletes the `.old`. **Bump `<Version>` in
   `Launcher.csproj` before every `publish.sh` that is uploaded**, or the new launcher thinks it is the old one.
+- **The system check** (`Core/SystemCheck.cs`): on Linux it looks for `libglfw.so.3` and `libvulkan.so.1`, on both systems it makes a Vulkan
+  instance and asks for the graphics cards (type, the swapchain extension). A missing library, no card, or a software card
+  (llvmpipe) shows a panel above "Spielen"; on apt, dnf, pacman and zypper systems a button installs the packages through
+  `pkexec` (the desktop's password dialog), with the command shown for copying. NVIDIA's own driver is never touched.
+  `Playtest64Launcher --system` prints the same to the console.
 - **Tray icon on Linux** depends on the desktop (it needs a StatusNotifier host); without one the background mode still
   works but has no icon to quit it by.
 - A "feedback" page in the window, later.

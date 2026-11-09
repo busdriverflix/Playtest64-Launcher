@@ -10,6 +10,7 @@ public partial class MainWindow : Window
     private readonly LauncherContext _context;
     private IReadOnlyList<BuildInfo> _builds = [];
     private LauncherRelease? _launcherUpdate;
+    private InstallPlan? _installPlan;
     private bool _busy;
     private bool _settingBoxes;				// the boxes are being set from code, which is not the person changing them
 
@@ -107,6 +108,7 @@ public partial class MainWindow : Window
             ShowSeason();
             _ = LoadNewsAsync();
             _ = CheckLauncherAsync();
+            _ = CheckSystemAsync();
         }
         catch (SignedOutException ex)
         {
@@ -128,6 +130,103 @@ public partial class MainWindow : Window
         {
             SetBusy(false);
         }
+    }
+
+    // Looks at the machine (libraries, Vulkan) away from the window's thread, and shows what is missing and what could be done
+    private async Task CheckSystemAsync()
+    {
+        SystemReport report;
+
+        try
+        {
+            report = await Task.Run(SystemCheck.Run);
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        SystemPanel.IsVisible = report.HasProblem;
+        _installPlan = null;
+        InstallButton.IsVisible = false;
+        CommandBox.IsVisible = false;
+
+        if (!report.HasProblem)
+            return;
+
+        SystemText.Text = string.Join("\n", report.Describe());
+
+        if (!OperatingSystem.IsLinux())
+        {
+            SystemText.Text += "\nAuf Windows hilft meist ein Update des Grafiktreibers (von AMD, Intel oder NVIDIA).";
+            return;
+        }
+
+        string osRelease;
+
+        try
+        {
+            osRelease = File.ReadAllText("/etc/os-release");
+        }
+        catch (IOException)
+        {
+            osRelease = "";
+        }
+
+        _installPlan = InstallPlan.For(osRelease, report);
+
+        if (_installPlan == null)
+        {
+            // a graphics card that is simply too old has nothing to install
+            if (report.MissingLibraries.Count > 0)
+                SystemText.Text += "\nInstalliere die Bibliotheken über den Paketmanager deiner Distribution.";
+
+            return;
+        }
+
+        CommandBox.Text = "sudo " + _installPlan.Command;
+        CommandBox.IsVisible = true;
+
+        if (InstallPlan.CanAskForPassword)
+        {
+            InstallButton.Content = report.MissingLibraries.Count > 0 ? "Fehlende Bibliotheken installieren" : "Grafiktreiber installieren";
+            InstallButton.IsVisible = true;
+        }
+    }
+
+    private async void InstallButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var plan = _installPlan;
+
+        if (plan == null || _busy)
+            return;
+
+        SetBusy(true);
+        StatusText.Text = $"Installiere über {plan.Manager} ... (das Passwort-Fenster deines Desktops fragt nach der Erlaubnis)";
+
+        try
+        {
+            var (code, output) = await plan.RunAsync();
+
+            StatusText.Text = code == 0
+                ? "Fertig. Prüfe noch einmal ..."
+                : code is 126 or 127
+                    ? "Die Installation wurde nicht erlaubt oder abgebrochen."
+                    : "Die Installation ist fehlgeschlagen (Code " + code + "): " + output.Trim().Split('\n').LastOrDefault();
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Die Installation konnte nicht gestartet werden: " + ex.Message;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+
+        await CheckSystemAsync();
+
+        if (SystemPanel.IsVisible == false)
+            StatusText.Text = "Alles installiert. Dein Rechner ist bereit.";
     }
 
     // Whether the server has a newer launcher: the button in the bar appears when it has. Never in the way, never an error.

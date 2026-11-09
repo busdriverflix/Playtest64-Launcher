@@ -8,6 +8,7 @@ namespace Playtest64.Launcher;
 
 	  Playtest64Launcher                the window
 	  Playtest64Launcher --background   the background check with a tray icon, no window: for the autostart
+	  Playtest64Launcher --system       what the machine lacks for the game (libraries, Vulkan), written to the console
 	  Playtest64Launcher --check        one check, written to the console, then it stops (for tests and timers)
 */
 internal static class Program
@@ -16,6 +17,9 @@ internal static class Program
     public static int Main(string[] args)
     {
         SelfUpdate.CleanUp();
+
+        if (args.Contains("--system"))
+            return SystemOnce();
 
         if (args.Contains("--check"))
             return CheckOnce();
@@ -28,6 +32,16 @@ internal static class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+
+    private static int SystemOnce()
+    {
+        var report = SystemCheck.Run();
+
+        Console.WriteLine($"Vulkan: {report.Vulkan}{(report.Device != null ? " (" + report.Device + ")" : "")}");
+        Console.WriteLine("Missing libraries: " + (report.MissingLibraries.Count == 0 ? "none" : string.Join(", ", report.MissingLibraries)));
+
+        return report.HasProblem ? 1 : 0;
+    }
 
     private static int CheckOnce()
     {

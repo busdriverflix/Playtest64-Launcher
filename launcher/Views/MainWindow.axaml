@@ -58,6 +58,17 @@
                     VerticalAlignment="Top"
                     Background="{DynamicResource ThemeSurface}" BorderBrush="{DynamicResource ThemeBorder}">
                 <StackPanel Spacing="10">
+                    <!-- What the machine lacks for the game: only shown when something does -->
+                    <Border Name="SystemPanel" IsVisible="False" BorderThickness="1" CornerRadius="4" Padding="10"
+                            BorderBrush="{DynamicResource ThemePrimary}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Dein Rechner ist noch nicht bereit" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
+                            <TextBlock Name="SystemText" TextWrapping="Wrap" Foreground="{DynamicResource ThemeMuted}"/>
+                            <Button Name="InstallButton" IsVisible="False" Classes="accent" HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center" Click="InstallButton_OnClick"/>
+                            <TextBox Name="CommandBox" IsVisible="False" IsReadOnly="True" TextWrapping="Wrap" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
                     <TextBlock Text="Spielen" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeText}"/>
                     <Grid ColumnDefinitions="*,Auto">
                         <ComboBox Name="BuildBox" Grid.Column="0" HorizontalAlignment="Stretch"
