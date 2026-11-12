@@ -17,7 +17,7 @@ not a zip is refused), mark a build complete only when it is, start it in its ow
 (announces a new build once, notices a token that ran out, copes with no network).
 
 **Not run by me**, so the first look is yours: the window itself (`launcher/Views/MainWindow.axaml`), the message in the
-corner (`ToastWindow`), the tray icon of the background mode, and everything on Windows. It builds for both.
+corner (`ToastWindow`), and everything on Windows. It builds for both.
 
 The window shows the website's news (text with paragraphs and bullet lists as on the site, screenshots, and a button that
 picks the build a post announces) next to the build list, and wears the website's seasonal look (Halloween 1 Oct - 7 Nov,
@@ -46,8 +46,9 @@ website (bats, snow, the Creepster font) are not in.
   environment variable `P64_GRAPHICS` (nothing for automatic). A variable and not an argument, because a game from before there was a
   choice ignores a variable and would take an argument for its pack. The game decides by itself with automatic: Vulkan, and OpenGL when
   Vulkan does not start.
-- **Tray icon on Linux** depends on the desktop (it needs a StatusNotifier host); without one the background mode still
-  works but has no icon to quit it by.
+- **The check at login is a single look**, not a service: `--background` waits 20 s, asks the server once (a few more tries after 1, 3 and
+  10 minutes if there was no network yet), shows a toast if there is news and ends. A click on the toast opens the launcher and the
+  process stays as the launcher. Only while the launcher window is open does it check again every 6 hours.
 - A "feedback" page in the window, later.
 
 ## Building
@@ -56,10 +57,15 @@ website (bats, snow, the Creepster font) are not in.
     dotnet test tests/Launcher.Tests               # the logic against a stand-in server
     ./publish.sh                                   # win-x64 and linux-x64, one file each, in build/publish/
 
+Against false alarms from antivirus programs (the launcher is not code-signed): the file is **not compressed** (`EnableCompressionInSingleFile`
+was taken out: a compressed file reads as "packed" to scanners; the Windows file is 41 MB instead of 23 MB), and it carries an icon and a
+product name, company, description and copyright (`Launcher.csproj`, `Assets/icon.ico`). What stays and can still look suspicious to a
+scanner: it replaces itself (self-update) and, if the tester ticks the box, starts at login (autostart).
+
 ## Running
 
     Playtest64Launcher                the window
-    Playtest64Launcher --background   the background check with a tray icon, no window: what "check for updates when I sign in" starts
+    Playtest64Launcher --background   one check at login, no window and no tray icon, then it ends: what "check for updates when I sign in" starts
     Playtest64Launcher --check        one check written to the console, then it stops (tests, timers)
 
 It keeps everything in one folder: `%LOCALAPPDATA%\Playtest64Launcher` or `~/.local/share/Playtest64Launcher`

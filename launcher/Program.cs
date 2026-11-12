@@ -4,10 +4,10 @@ namespace Playtest64.Launcher;
 
 /*
 	The Playtest64 launcher: signs a tester in, lists the builds of the game, installs the one they pick and
-	starts it; in the background it looks now and then for a new build and says so.
+	starts it; at login it looks once for a new build and says so, and while it is open it looks now and then.
 
 	  Playtest64Launcher                the window
-	  Playtest64Launcher --background   the background check with a tray icon, no window: for the autostart
+	  Playtest64Launcher --background   one check at login, no window, then it ends: for the autostart
 	  Playtest64Launcher --system       what the machine lacks for the game (libraries, Vulkan), written to the console
 	  Playtest64Launcher --check        one check, written to the console, then it stops (for tests and timers)
 */

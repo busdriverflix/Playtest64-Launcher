@@ -6,10 +6,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <Version>0.1.4</Version>
+    <Version>0.1.5</Version>
     <AssemblyName>Playtest64Launcher</AssemblyName>
     <RootNamespace>Playtest64.Launcher</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <!-- What Windows shows under Properties > Details. A program with no name, company or description looks like
+         what a scanner is suspicious of; this is a few lines that say what it is -->
+    <Product>Playtest64 Launcher</Product>
+    <Company>Playtest64</Company>
+    <Description>Launcher for the Game A playtest: installs, updates and starts the game</Description>
+    <Copyright>Copyright (c) Felix Roeling</Copyright>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- Nothing in the launcher needs a culture's rules, and ICU is a library a Linux may not have -->
     <InvariantGlobalization>true</InvariantGlobalization>
